@@ -50,8 +50,8 @@ end
 # ╔═╡ 62b254f5-d0b3-42b3-a0f0-4d459012e0fd
 @model function ratings_mean(y)
 	# Prior information 
-	μ ~ Normal(0, 1)
-	σ ~ LogNormal(0,1)
+	μ ~ Normal(0,1)
+	σ ~ LogNormal(0.1,0.1)
 	
 	# Number of observations 
 	N = length(y)
@@ -67,11 +67,31 @@ s_ratings = filter(:country_of_bean_origin => ==("U.S.A."), df_filt)[!,:ratings]
 begin
 	# Prior predictive simulations 
 	prior_distr = sample(ratings_mean(s_ratings), Prior(), 1000)
-	m_fig = plot(DataFrame(prior_distr), x=:μ, Geom.histogram,
+	prior_distr = DataFrame(prior_distr)
+	m_fig = plot(prior_distr, x=:μ, Geom.histogram,
 		Theme(background_color = "white"))
-	s_fig = plot(DataFrame(prior_distr), x=:σ, Geom.histogram, 
+	s_fig = plot(prior_distr, x=:σ, Geom.histogram, 
 		Theme(background_color = "white"))
 	vstack(m_fig, s_fig)
+end
+
+# ╔═╡ 2d06847e-7f31-4a34-874b-491ad9d7b750
+begin
+	plt_df = @chain df_filt begin
+		groupby(:country_of_bean_origin)
+		@combine begin
+			m = mean(:ratings)
+			s = std(:ratings)
+		end
+	end
+	vstack(
+		plot(x = plt_df[!,:m], Geom.density, 
+			Theme(default_color = "red", background_color = "white"), 
+			Guide.xlabel("μ")),
+		plot(x = plt_df[!,:s], Geom.density, 
+			Theme(default_color = "blue", background_color = "white"), 
+			Guide.xlabel("σ"))
+	)
 end
 
 # ╔═╡ 279328cf-e171-4c2d-9960-8c6d1e684449
@@ -90,8 +110,9 @@ begin
 	chain_df[!,:chain] = categorical(chain_df.chain)
 	vstack(
 		Gadfly.plot(DataFrame(chain_df), x = :μ, color = :chain, Geom.density,
-			Coord.cartesian(xmin = 2.5, xmax = 3.75)),
-		Gadfly.plot(DataFrame(chain_df), x = :σ, color = :chain, Geom.density)
+			Coord.cartesian(xmin = 2, xmax = 4), Theme(background_color = "white")),
+		Gadfly.plot(DataFrame(chain_df), x = :σ, color = :chain, Geom.density, 
+			Theme(background_color = "white"))
 	)
 end
 
@@ -1186,6 +1207,7 @@ uuid = "3f19e933-33d8-53b3-aaab-bd5110c3b7a0"
 # ╠═62b254f5-d0b3-42b3-a0f0-4d459012e0fd
 # ╠═463142cc-80b7-4973-aecc-c422116bd0e0
 # ╠═aebb001b-e910-4aa8-b325-73db62e3c788
+# ╠═2d06847e-7f31-4a34-874b-491ad9d7b750
 # ╠═279328cf-e171-4c2d-9960-8c6d1e684449
 # ╠═379e05ad-db5c-47af-9c1f-ef4cd03dd81d
 # ╠═6ed8e309-265f-481b-bb2c-b56456ef8551
